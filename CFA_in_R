@@ -1,0 +1,48 @@
+
+library(doRNG)
+library(jtools)  # for Reg interaction
+library(olsrr)
+library(lavaan)
+library(lavaanPlot)
+library(beepr)
+library(readxl)
+library(semTools) # AVE(fit)
+
+#### Clean all objective and variable
+rm(list = ls())
+cat("\014")
+graphics.off()  # close all figures
+#graphics.on()
+
+# get the directory path of the running R script
+dir_path <- dirname(rstudioapi::getSourceEditorContext()$path)
+
+# set the selected directory as the working directory
+setwd(dir_path)
+
+# Load raw data
+DataRaw <- read.csv("Data.csv", header = TRUE)
+datadata = DataRaw
+
+#####
+# CFA Measurment Model
+mmodel <- '
+                    Tr      =~   MAT_1 + MAT_2 + MAT_3 + MAT_4
+                    ML      =~   MLA_1 + MLA_2 + MLA_3  
+                    Val   =~     MAV_1 + MAV_2 + MAV_3
+                    PuIn    =~   PI_1	 + PI_2	 + PI_3 
+                    '
+
+fit <- cfa(mmodel, data=datadata)
+summary(fit)
+summary(fit, fit.measures=TRUE, standardize = TRUE)
+AVE_value <- AVE(fit)  # library(semTools)
+phi <- inspect(fit,what="std")$psi
+phi <- phi[][]  # copy from lower mat to upper
+diag(phi) <- 0
+apply(phi,2,max)
+sqrt(AVE_value)
+
+
+#(McDonald, 1999) McDonald, R. P. (1999). Test theory: A unified treatment. Mahwah, NJ: Erlbaum.
+R <-reliability(fit)
